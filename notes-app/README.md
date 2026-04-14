@@ -2,6 +2,37 @@
 
 Легковесное приложение для заметок с трехслойной архитектурой, unit-тестами и поддержкой Android, iOS и веб-браузера.
 
+## Быстрый старт
+
+### Локальный запуск (macOS/Linux)
+
+```bash
+cd notes-app/server
+go run cmd/server/main.go
+```
+
+Приложение доступно: http://localhost:8080
+
+### Деплой на Linux сервер (одна команда)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Nikerra/Notes/main/notes-app/deploy/install.sh | bash
+```
+
+Автоматически установит Go, соберет и запустит приложение как systemd сервис.
+
+### Docker (рекомендуется для продакшена)
+
+```bash
+git clone https://github.com/Nikerra/Notes.git
+cd Notes/notes-app
+docker-compose up -d
+```
+
+Приложение доступно: http://YOUR_SERVER_IP:8080
+
+Подробная инструкция: [DEPLOY.md](DEPLOY.md)
+
 ## Архитектура
 
 Проект использует чистую трехслойную архитектуру:

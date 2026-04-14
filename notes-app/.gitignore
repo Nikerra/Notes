@@ -1,0 +1,39 @@
+# IDE and Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Kilo local config (keep only in local project)
+kilo.json
+.kilo/
+
+# Data
+data/
+*.db
+*.db-journal
+
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go
+*.test
+*.out
+go.work
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Заметки">
+    <title>Заметки</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>Заметки</h1>
+            <button class="sync-btn" id="syncBtn" title="Синхронизация">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+            </button>
+        </header>
+
+        <div class="controls">
+            <button class="filter-btn active" data-filter="all">Все</button>
+            <button class="filter-btn" data-filter="work">Работа</button>
+            <button class="filter-btn" data-filter="personal">Личное</button>
+        </div>
+
+        <div class="add-form">
+            <input type="text" id="titleInput" placeholder="Новая заметка..." maxlength="100">
+            <textarea id="contentInput" placeholder="Описание (необязательно)" maxlength="500"></textarea>
+            <div class="add-form-row">
+                <select id="categorySelect">
+                    <option value="personal">Личное</option>
+                    <option value="work">Работа</option>
+                </select>
+                <button id="addBtn" class="add-btn">Добавить</button>
+            </div>
+        </div>
+
+        <div class="notes-list" id="notesList"></div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

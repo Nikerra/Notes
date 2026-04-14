@@ -1,0 +1,327 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.app {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px 0;
+}
+
+.header h1 {
+    color: white;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.sync-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.sync-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(180deg);
+}
+
+.sync-btn.syncing {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 14px;
+}
+
+.filter-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.filter-btn.active {
+    background: white;
+    color: #667eea;
+    font-weight: 600;
+}
+
+.add-form {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.add-form input,
+.add-form textarea {
+    width: 100%;
+    border: 2px solid #f0f0f0;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+    font-family: inherit;
+}
+
+.add-form input:focus,
+.add-form textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.add-form textarea {
+    resize: vertical;
+    min-height: 60px;
+    margin-top: 10px;
+}
+
+.add-form-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.add-form select {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #f0f0f0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+}
+
+.add-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.add-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.add-btn:active {
+    transform: translateY(0);
+}
+
+.notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.note-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.note-card.completed {
+    opacity: 0.6;
+}
+
+.note-card.completed .note-title {
+    text-decoration: line-through;
+    color: #999;
+}
+
+.note-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.note-checkbox {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #667eea;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.note-checkbox:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.note-checkbox.checked {
+    background: #667eea;
+    color: white;
+}
+
+.note-checkbox.checked svg {
+    width: 14px;
+    height: 14px;
+}
+
+.note-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+    word-break: break-word;
+}
+
+.note-content {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 12px;
+    padding-left: 34px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.note-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 34px;
+}
+
+.note-category {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.note-category.work {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.note-category.personal {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.note-delete {
+    background: none;
+    border: none;
+    color: #ff5252;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.note-delete:hover {
+    background: #ffe5e5;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: white;
+}
+
+.empty-state svg {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 20px;
+    opacity: 0.8;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    opacity: 0.8;
+}
+
+@media (max-width: 480px) {
+    .app {
+        padding: 15px;
+    }
+    
+    .header h1 {
+        font-size: 24px;
+    }
+    
+    .add-form-row {
+        flex-direction: column;
+    }
+    
+    .add-btn {
+        width: 100%;
+    }
+}

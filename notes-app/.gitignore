@@ -8,6 +8,8 @@
 # Kilo local config (keep only in local project)
 kilo.json
 .kilo/
+RULES.md
+AGENTS.md
 
 # Data
 data/

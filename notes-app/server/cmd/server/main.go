@@ -43,7 +43,22 @@ func main() {
 	dataDir := getEnv("DATA_DIR", "./data")
 	port := getEnv("PORT", "8080")
 	ginMode := getEnv("GIN_MODE", "debug")
-	webDir := getEnv("WEB_DIR", "./web")
+
+	// Автоматическое определение пути к web директории
+	webDir := getEnv("WEB_DIR", "")
+	if webDir == "" {
+		// Проверяем несколько возможных путей
+		possiblePaths := []string{"./web", "../web", "../../web"}
+		for _, path := range possiblePaths {
+			if _, err := os.Stat(path); err == nil {
+				webDir = path
+				break
+			}
+		}
+		if webDir == "" {
+			log.Fatal("Web directory not found. Set WEB_DIR environment variable")
+		}
+	}
 
 	// Установка режима Gin (debug или release)
 	gin.SetMode(ginMode)
@@ -85,11 +100,6 @@ func main() {
 	// Регистрация API маршрутов
 	apiGroup := router.Group("/api")
 	noteHandler.RegisterRoutes(apiGroup)
-
-	// Определение путей к статическим файлам
-	if _, err := os.Stat(webDir); os.IsNotExist(err) {
-		log.Fatalf("Web directory '%s' not found. Run from notes-app/ directory or set WEB_DIR", webDir)
-	}
 
 	// Настройка статических файлов для PWA
 	router.Static("/static", webDir)

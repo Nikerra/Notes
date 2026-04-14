@@ -8,7 +8,7 @@
 
 ```bash
 cd notes-app/server
-WEB_DIR=../web go run cmd/server/main.go
+go run cmd/server/main.go
 ```
 
 Приложение доступно: http://localhost:8080

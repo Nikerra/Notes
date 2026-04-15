@@ -325,3 +325,206 @@ body {
         width: 100%;
     }
 }
+
+/* Calendar Styles */
+.header-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.view-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.view-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.view-btn.active {
+    background: white;
+    color: #667eea;
+}
+
+.calendar-view {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.calendar-header h2 {
+    font-size: 20px;
+    color: #333;
+}
+
+.calendar-nav {
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s;
+}
+
+.calendar-nav:hover {
+    background: #764ba2;
+    transform: scale(1.1);
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.calendar-weekdays div {
+    text-align: center;
+    font-weight: 600;
+    color: #667eea;
+    font-size: 12px;
+    padding: 5px;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 14px;
+    position: relative;
+    background: #f8f9fa;
+}
+
+.calendar-day:hover {
+    background: #e9ecef;
+}
+
+.calendar-day.today {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.calendar-day.other-month {
+    color: #ccc;
+}
+
+.calendar-day.selected {
+    box-shadow: 0 0 0 2px #667eea;
+}
+
+.calendar-day.has-notes::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ff6b6b;
+}
+
+.calendar-day.today.has-notes::after {
+    background: white;
+}
+
+.calendar-notes {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+.calendar-notes h3 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.add-form input[type="datetime-local"] {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #f0f0f0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+}
+
+.add-form input[type="datetime-local"]:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.note-due-date {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+    padding-left: 34px;
+}
+
+.note-due-date.overdue {
+    color: #ff5252;
+    font-weight: 600;
+}
+
+.note-due-date.upcoming {
+    color: #ffa726;
+}
+
+.note-due-date svg {
+    width: 14px;
+    height: 14px;
+}
+
+@media (max-width: 480px) {
+    .header-buttons {
+        gap: 5px;
+    }
+    
+    .view-btn, .sync-btn {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .calendar-day {
+        font-size: 12px;
+    }
+    
+    .calendar-weekdays div {
+        font-size: 10px;
+    }
+}

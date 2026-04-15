@@ -5,7 +5,7 @@ package domain
 import "time"
 
 // Note представляет заметку пользователя с заголовком, содержанием и статусом выполнения.
-// Заметки могут быть категоризированы как рабочие или личные.
+// Заметки могут быть категоризированы как рабочие или личные, а также иметь срок выполнения.
 type Note struct {
 	// ID - уникальный идентификатор заметки (автоинкремент в БД)
 	ID int64 `json:"id"`
@@ -21,6 +21,11 @@ type Note struct {
 
 	// Completed - флаг выполнения заметки (true/false)
 	Completed bool `json:"completed"`
+
+	// DueDate - срок выполнения заметки (опциональное поле).
+	// Используется для отображения в календаре и установки напоминаний.
+	// Может быть nil, если срок не установлен.
+	DueDate *time.Time `json:"dueDate,omitempty"`
 
 	// CreatedAt - дата и время создания заметки
 	CreatedAt time.Time `json:"createdAt"`
@@ -60,4 +65,14 @@ func (c Category) IsValid() bool {
 type NoteFilter struct {
 	// Category - категория для фильтрации (если пусто, возвращает все категории)
 	Category Category
+
+	// DueDateFrom - начальная дата для фильтрации по сроку выполнения
+	DueDateFrom *time.Time
+
+	// DueDateTo - конечная дата для фильтрации по сроку выполнения
+	DueDateTo *time.Time
+
+	// HasDueDate - фильтр: только заметки с установленным сроком (true) или без срока (false)
+	// nil означает, что фильтр не применяется
+	HasDueDate *bool
 }

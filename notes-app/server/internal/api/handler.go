@@ -5,6 +5,7 @@ package api
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -44,6 +45,10 @@ type CreateNoteRequest struct {
 
 	// Completed - статус выполнения (по умолчанию false)
 	Completed bool `json:"completed"`
+
+	// DueDate - срок выполнения в формате RFC3339 (опциональное)
+	// Пример: "2024-12-31T23:59:59Z"
+	DueDate *time.Time `json:"dueDate"`
 }
 
 // UpdateNoteRequest представляет запрос на обновление заметки.
@@ -59,6 +64,9 @@ type UpdateNoteRequest struct {
 
 	// Completed - новый статус выполнения
 	Completed bool `json:"completed"`
+
+	// DueDate - новый срок выполнения (nil для удаления срока)
+	DueDate *time.Time `json:"dueDate"`
 }
 
 // ErrorResponse представляет ошибку в HTTP ответе.
@@ -75,6 +83,8 @@ type ErrorResponse struct {
 //   - PUT /notes/:id - обновить заметку
 //   - DELETE /notes/:id - удалить заметку
 //   - PATCH /notes/:id/toggle - переключить статус выполнения
+//   - GET /notes/upcoming - получить предстоящие заметки
+//   - GET /notes/overdue - получить просроченные заметки
 //
 // Параметры:
 //   - r: группа маршрутов Gin
@@ -89,6 +99,8 @@ func (h *NoteHandler) RegisterRoutes(r *gin.RouterGroup) {
 	{
 		notes.GET("", h.GetAll)
 		notes.POST("", h.Create)
+		notes.GET("/upcoming", h.GetUpcoming)
+		notes.GET("/overdue", h.GetOverdue)
 		notes.GET("/:id", h.GetByID)
 		notes.PUT("/:id", h.Update)
 		notes.DELETE("/:id", h.Delete)
@@ -97,10 +109,13 @@ func (h *NoteHandler) RegisterRoutes(r *gin.RouterGroup) {
 }
 
 // GetAll обрабатывает GET /api/notes запрос.
-// Возвращает список всех заметок с возможностью фильтрации по категории.
+// Возвращает список всех заметок с возможностью фильтрации.
 //
 // Query параметры:
 //   - category: категория для фильтрации ("work", "personal" или "all")
+//   - dueDateFrom: начальная дата срока выполнения (RFC3339)
+//   - dueDateTo: конечная дата срока выполнения (RFC3339)
+//   - hasDueDate: "true" или "false" - фильтр по наличию срока
 //
 // Ответы:
 //   - 200 OK: массив заметок в JSON
@@ -110,12 +125,30 @@ func (h *NoteHandler) RegisterRoutes(r *gin.RouterGroup) {
 //
 //	GET /api/notes
 //	GET /api/notes?category=work
+//	GET /api/notes?dueDateFrom=2024-01-01T00:00:00Z&dueDateTo=2024-12-31T23:59:59Z
 func (h *NoteHandler) GetAll(c *gin.Context) {
-	category := c.Query("category")
+	filter := &domain.NoteFilter{}
 
-	var filter *domain.NoteFilter
+	category := c.Query("category")
 	if category != "" && category != "all" {
-		filter = &domain.NoteFilter{Category: domain.Category(category)}
+		filter.Category = domain.Category(category)
+	}
+
+	if dueDateFrom := c.Query("dueDateFrom"); dueDateFrom != "" {
+		if t, err := time.Parse(time.RFC3339, dueDateFrom); err == nil {
+			filter.DueDateFrom = &t
+		}
+	}
+
+	if dueDateTo := c.Query("dueDateTo"); dueDateTo != "" {
+		if t, err := time.Parse(time.RFC3339, dueDateTo); err == nil {
+			filter.DueDateTo = &t
+		}
+	}
+
+	if hasDueDate := c.Query("hasDueDate"); hasDueDate != "" {
+		val := hasDueDate == "true"
+		filter.HasDueDate = &val
 	}
 
 	notes, err := h.svc.GetAll(c.Request.Context(), filter)
@@ -164,6 +197,7 @@ func (h *NoteHandler) GetByID(c *gin.Context) {
 //   - title (обязательное): заголовок заметки
 //   - content (опциональное): содержание
 //   - category (опциональное): "work" или "personal" (по умолчанию "personal")
+//   - dueDate (опциональное): срок выполнения в RFC3339
 //
 // Ответы:
 //   - 201 Created: созданная заметка в JSON
@@ -176,7 +210,8 @@ func (h *NoteHandler) GetByID(c *gin.Context) {
 //	{
 //	    "title": "Купить продукты",
 //	    "content": "Молоко, хлеб",
-//	    "category": "personal"
+//	    "category": "personal",
+//	    "dueDate": "2024-12-31T18:00:00Z"
 //	}
 func (h *NoteHandler) Create(c *gin.Context) {
 	var req CreateNoteRequest
@@ -190,9 +225,9 @@ func (h *NoteHandler) Create(c *gin.Context) {
 		category = domain.CategoryPersonal
 	}
 
-	note, err := h.svc.Create(c.Request.Context(), req.Title, req.Content, category)
+	note, err := h.svc.Create(c.Request.Context(), req.Title, req.Content, category, req.DueDate)
 	if err != nil {
-		if err == service.ErrInvalidTitle || err == service.ErrInvalidCategory {
+		if err == service.ErrInvalidTitle || err == service.ErrInvalidCategory || err == service.ErrInvalidDueDate {
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 			return
 		}
@@ -214,6 +249,7 @@ func (h *NoteHandler) Create(c *gin.Context) {
 //   - content (опциональное): новое содержание
 //   - category (опциональное): новая категория
 //   - completed: новый статус выполнения
+//   - dueDate (опциональное): новый срок выполнения (null для удаления)
 //
 // Ответы:
 //   - 200 OK: обновленная заметка в JSON
@@ -228,7 +264,8 @@ func (h *NoteHandler) Create(c *gin.Context) {
 //	    "title": "Обновленный заголовок",
 //	    "content": "Обновленное содержание",
 //	    "category": "work",
-//	    "completed": true
+//	    "completed": true,
+//	    "dueDate": null
 //	}
 func (h *NoteHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -244,13 +281,13 @@ func (h *NoteHandler) Update(c *gin.Context) {
 	}
 
 	category := domain.Category(req.Category)
-	note, err := h.svc.Update(c.Request.Context(), id, req.Title, req.Content, category, req.Completed)
+	note, err := h.svc.Update(c.Request.Context(), id, req.Title, req.Content, category, req.Completed, req.DueDate)
 	if err != nil {
 		if err == service.ErrNoteNotFound {
 			c.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
 			return
 		}
-		if err == service.ErrInvalidTitle || err == service.ErrInvalidCategory {
+		if err == service.ErrInvalidTitle || err == service.ErrInvalidCategory || err == service.ErrInvalidDueDate {
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 			return
 		}
@@ -328,4 +365,55 @@ func (h *NoteHandler) Delete(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "note deleted"})
+}
+
+// GetUpcoming обрабатывает GET /api/notes/upcoming запрос.
+// Возвращает заметки с предстоящим сроком выполнения.
+//
+// Query параметры:
+//   - days: количество дней вперед (по умолчанию 7)
+//
+// Ответы:
+//   - 200 OK: массив заметок в JSON
+//   - 500 Internal Server Error: ошибка сервера
+//
+// Пример:
+//
+//	GET /api/notes/upcoming
+//	GET /api/notes/upcoming?days=14
+func (h *NoteHandler) GetUpcoming(c *gin.Context) {
+	days := 7
+	if d := c.Query("days"); d != "" {
+		if parsed, err := strconv.Atoi(d); err == nil && parsed > 0 {
+			days = parsed
+		}
+	}
+
+	notes, err := h.svc.GetUpcoming(c.Request.Context(), days)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, notes)
+}
+
+// GetOverdue обрабатывает GET /api/notes/overdue запрос.
+// Возвращает просроченные невыполненные заметки.
+//
+// Ответы:
+//   - 200 OK: массив заметок в JSON
+//   - 500 Internal Server Error: ошибка сервера
+//
+// Пример:
+//
+//	GET /api/notes/overdue
+func (h *NoteHandler) GetOverdue(c *gin.Context) {
+	notes, err := h.svc.GetOverdue(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, notes)
 }

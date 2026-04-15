@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"notes-app/internal/domain"
 )
@@ -22,6 +23,9 @@ var (
 
 	// ErrInvalidNoteID - идентификатор заметки невалиден (<= 0)
 	ErrInvalidNoteID = errors.New("invalid note id")
+
+	// ErrInvalidDueDate - срок выполнения в прошлом (для невыполненных заметок)
+	ErrInvalidDueDate = errors.New("due date cannot be in the past for incomplete notes")
 )
 
 // NoteService предоставляет методы для работы с заметками.
@@ -43,7 +47,7 @@ func NewNoteService(repo domain.NoteRepository) *NoteService {
 	return &NoteService{repo: repo}
 }
 
-// Create создает новую заметку с указанным заголовком, содержанием и категорией.
+// Create создает новую заметку с указанным заголовком, содержанием, категорией и сроком выполнения.
 // Выполняет валидацию входных данных перед сохранением.
 //
 // Параметры:
@@ -51,21 +55,24 @@ func NewNoteService(repo domain.NoteRepository) *NoteService {
 //   - title: заголовок заметки (обязательный, не пустой)
 //   - content: содержание заметки (опциональный, может быть пустым)
 //   - category: категория заметки (если пустая, используется CategoryPersonal)
+//   - dueDate: срок выполнения заметки (опциональный, может быть nil)
 //
 // Возвращает:
 //   - *domain.Note: созданная заметка с ID и временными метками
 //   - error: ErrInvalidTitle если title пустой,
 //     ErrInvalidCategory если категория невалидна,
+//     ErrInvalidDueDate если срок в прошлом,
 //     или ошибка при сохранении в БД
 //
 // Пример:
 //
-//	note, err := svc.Create(ctx, "Купить продукты", "Молоко, хлеб", domain.CategoryPersonal)
+//	dueDate := time.Now().Add(24 * time.Hour)
+//	note, err := svc.Create(ctx, "Купить продукты", "Молоко, хлеб", domain.CategoryPersonal, &dueDate)
 //	if err != nil {
 //	    // обработка ошибки
 //	}
 //	fmt.Printf("Created note with ID: %d\n", note.ID)
-func (s *NoteService) Create(ctx context.Context, title, content string, category domain.Category) (*domain.Note, error) {
+func (s *NoteService) Create(ctx context.Context, title, content string, category domain.Category, dueDate *time.Time) (*domain.Note, error) {
 	if title == "" {
 		return nil, ErrInvalidTitle
 	}
@@ -78,11 +85,17 @@ func (s *NoteService) Create(ctx context.Context, title, content string, categor
 		category = domain.CategoryPersonal
 	}
 
+	// Валидация срока выполнения (не должен быть в прошлом для невыполненных заметок)
+	if dueDate != nil && dueDate.Before(time.Now()) {
+		return nil, ErrInvalidDueDate
+	}
+
 	note := &domain.Note{
 		Title:     title,
 		Content:   content,
 		Category:  string(category),
 		Completed: false,
+		DueDate:   dueDate,
 	}
 
 	return s.repo.Create(ctx, note)
@@ -117,7 +130,7 @@ func (s *NoteService) GetByID(ctx context.Context, id int64) (*domain.Note, erro
 	return note, nil
 }
 
-// GetAll возвращает все заметки с возможностью фильтрации по категории.
+// GetAll возвращает все заметки с возможностью фильтрации.
 //
 // Параметры:
 //   - ctx: контекст для отмены операции
@@ -135,6 +148,16 @@ func (s *NoteService) GetByID(ctx context.Context, id int64) (*domain.Note, erro
 //	// Получить только рабочие заметки
 //	filter := &domain.NoteFilter{Category: domain.CategoryWork}
 //	workNotes, err := svc.GetAll(ctx, filter)
+//
+//	// Получить заметки на сегодня
+//	today := time.Now()
+//	startOfDay := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
+//	endOfDay := startOfDay.Add(24 * time.Hour)
+//	dateFilter := &domain.NoteFilter{
+//	    DueDateFrom: &startOfDay,
+//	    DueDateTo:   &endOfDay,
+//	}
+//	todayNotes, err := svc.GetAll(ctx, dateFilter)
 func (s *NoteService) GetAll(ctx context.Context, filter *domain.NoteFilter) ([]*domain.Note, error) {
 	return s.repo.GetAll(ctx, filter)
 }
@@ -149,6 +172,7 @@ func (s *NoteService) GetAll(ctx context.Context, filter *domain.NoteFilter) ([]
 //   - content: новое содержание (опциональный)
 //   - category: новая категория (если пустая, старая категория сохраняется)
 //   - completed: новый статус выполнения
+//   - dueDate: новый срок выполнения (может быть nil для удаления срока)
 //
 // Возвращает:
 //   - *domain.Note: обновленная заметка с новыми временными метками
@@ -159,8 +183,9 @@ func (s *NoteService) GetAll(ctx context.Context, filter *domain.NoteFilter) ([]
 //
 // Пример:
 //
-//	updated, err := svc.Update(ctx, 1, "Новый заголовок", "Новое содержание", domain.CategoryWork, true)
-func (s *NoteService) Update(ctx context.Context, id int64, title, content string, category domain.Category, completed bool) (*domain.Note, error) {
+//	dueDate := time.Now().Add(48 * time.Hour)
+//	updated, err := svc.Update(ctx, 1, "Новый заголовок", "Новое содержание", domain.CategoryWork, true, &dueDate)
+func (s *NoteService) Update(ctx context.Context, id int64, title, content string, category domain.Category, completed bool, dueDate *time.Time) (*domain.Note, error) {
 	if id <= 0 {
 		return nil, ErrInvalidNoteID
 	}
@@ -184,6 +209,7 @@ func (s *NoteService) Update(ctx context.Context, id int64, title, content strin
 		note.Category = string(category)
 	}
 	note.Completed = completed
+	note.DueDate = dueDate
 
 	return s.repo.Update(ctx, note)
 }
@@ -247,4 +273,73 @@ func (s *NoteService) Delete(ctx context.Context, id int64) error {
 	}
 
 	return s.repo.Delete(ctx, id)
+}
+
+// GetUpcoming возвращает заметки с предстоящим сроком выполнения.
+// Полезно для отображения в календаре или напоминаниях.
+//
+// Параметры:
+//   - ctx: контекст для отмены операции
+//   - days: количество дней вперед (например, 7 для недели)
+//
+// Возвращает:
+//   - []*domain.Note: список заметок с предстоящим сроком
+//   - error: ошибка при запросе к БД
+//
+// Пример:
+//
+//	// Получить заметки на ближайшую неделю
+//	upcoming, err := svc.GetUpcoming(ctx, 7)
+func (s *NoteService) GetUpcoming(ctx context.Context, days int) ([]*domain.Note, error) {
+	now := time.Now()
+	endDate := now.AddDate(0, 0, days)
+
+	hasDueDate := true
+	filter := &domain.NoteFilter{
+		DueDateFrom: &now,
+		DueDateTo:   &endDate,
+		HasDueDate:  &hasDueDate,
+	}
+
+	return s.repo.GetAll(ctx, filter)
+}
+
+// GetOverdue возвращает просроченные невыполненные заметки.
+//
+// Параметры:
+//   - ctx: контекст для отмены операции
+//
+// Возвращает:
+//   - []*domain.Note: список просроченных заметок
+//   - error: ошибка при запросе к БД
+//
+// Пример:
+//
+//	overdue, err := svc.GetOverdue(ctx)
+//	if len(overdue) > 0 {
+//	    // есть просроченные задачи
+//	}
+func (s *NoteService) GetOverdue(ctx context.Context) ([]*domain.Note, error) {
+	now := time.Now()
+	hasDueDate := true
+	
+	filter := &domain.NoteFilter{
+		DueDateTo:  &now,
+		HasDueDate: &hasDueDate,
+	}
+
+	notes, err := s.repo.GetAll(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Фильтруем только невыполненные
+	var overdue []*domain.Note
+	for _, note := range notes {
+		if !note.Completed {
+			overdue = append(overdue, note)
+		}
+	}
+
+	return overdue, nil
 }

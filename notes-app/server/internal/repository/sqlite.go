@@ -5,6 +5,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"notes-app/internal/domain"
@@ -45,16 +46,16 @@ func NewSQLiteRepository(db *sql.DB) *SQLiteRepository {
 //
 // SQL запрос:
 //
-//	INSERT INTO notes (title, content, category, completed, created_at, updated_at)
-//	VALUES (?, ?, ?, ?, ?, ?)
+//	INSERT INTO notes (title, content, category, completed, due_date, created_at, updated_at)
+//	VALUES (?, ?, ?, ?, ?, ?, ?)
 func (r *SQLiteRepository) Create(ctx context.Context, note *domain.Note) (*domain.Note, error) {
 	query := `
-		INSERT INTO notes (title, content, category, completed, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO notes (title, content, category, completed, due_date, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
 	now := time.Now()
 	result, err := r.db.ExecContext(ctx, query,
-		note.Title, note.Content, note.Category, note.Completed, now, now)
+		note.Title, note.Content, note.Category, note.Completed, note.DueDate, now, now)
 	if err != nil {
 		return nil, err
 	}
@@ -82,58 +83,78 @@ func (r *SQLiteRepository) Create(ctx context.Context, note *domain.Note) (*doma
 //
 // SQL запрос:
 //
-//	SELECT id, title, content, category, completed, created_at, updated_at
+//	SELECT id, title, content, category, completed, due_date, created_at, updated_at
 //	FROM notes WHERE id = ?
 func (r *SQLiteRepository) GetByID(ctx context.Context, id int64) (*domain.Note, error) {
 	query := `
-		SELECT id, title, content, category, completed, created_at, updated_at
+		SELECT id, title, content, category, completed, due_date, created_at, updated_at
 		FROM notes WHERE id = ?
 	`
 	note := &domain.Note{}
+	var dueDate sql.NullTime
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&note.ID, &note.Title, &note.Content, &note.Category,
-		&note.Completed, &note.CreatedAt, &note.UpdatedAt,
+		&note.Completed, &dueDate, &note.CreatedAt, &note.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
+	
+	if dueDate.Valid {
+		note.DueDate = &dueDate.Time
+	}
 	return note, nil
 }
 
-// GetAll возвращает все заметки из базы данных с возможностью фильтрации по категории.
+// GetAll возвращает все заметки из базы данных с возможностью фильтрации.
 // Заметки сортируются по дате создания в обратном порядке (новые первые).
 //
 // Параметры:
 //   - ctx: контекст для отмены операции
-//   - filter: фильтр по категории (nil или пустая категория возвращает все заметки)
+//   - filter: фильтр по категории и/или датам (nil возвращает все заметки)
 //
 // Возвращает:
 //   - []*domain.Note: список заметок (пустой список если ничего не найдено, но не nil)
 //   - error: ошибка при выполнении SELECT запроса
 //
-// SQL запросы:
-//
-//	Без фильтра:
-//	  SELECT ... FROM notes ORDER BY created_at DESC
-//
-//	С фильтром:
-//	  SELECT ... FROM notes WHERE category = ? ORDER BY created_at DESC
+// Поддерживаемые фильтры:
+//   - Category: фильтрация по категории
+//   - DueDateFrom/DueDateTo: диапазон дат срока выполнения
+//   - HasDueDate: только заметки с/без срока выполнения
 func (r *SQLiteRepository) GetAll(ctx context.Context, filter *domain.NoteFilter) ([]*domain.Note, error) {
-	var query string
+	var conditions []string
 	var args []interface{}
 
-	if filter != nil && filter.Category != "" {
-		query = `
-			SELECT id, title, content, category, completed, created_at, updated_at
-			FROM notes WHERE category = ? ORDER BY created_at DESC
-		`
-		args = append(args, filter.Category)
-	} else {
-		query = `
-			SELECT id, title, content, category, completed, created_at, updated_at
-			FROM notes ORDER BY created_at DESC
-		`
+	if filter != nil {
+		if filter.Category != "" {
+			conditions = append(conditions, "category = ?")
+			args = append(args, filter.Category)
+		}
+		if filter.DueDateFrom != nil {
+			conditions = append(conditions, "due_date >= ?")
+			args = append(args, *filter.DueDateFrom)
+		}
+		if filter.DueDateTo != nil {
+			conditions = append(conditions, "due_date <= ?")
+			args = append(args, *filter.DueDateTo)
+		}
+		if filter.HasDueDate != nil {
+			if *filter.HasDueDate {
+				conditions = append(conditions, "due_date IS NOT NULL")
+			} else {
+				conditions = append(conditions, "due_date IS NULL")
+			}
+		}
 	}
+
+	query := `
+		SELECT id, title, content, category, completed, due_date, created_at, updated_at
+		FROM notes
+	`
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+	query += " ORDER BY due_date ASC, created_at DESC"
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -144,11 +165,15 @@ func (r *SQLiteRepository) GetAll(ctx context.Context, filter *domain.NoteFilter
 	var notes []*domain.Note
 	for rows.Next() {
 		note := &domain.Note{}
+		var dueDate sql.NullTime
 		if err := rows.Scan(
 			&note.ID, &note.Title, &note.Content, &note.Category,
-			&note.Completed, &note.CreatedAt, &note.UpdatedAt,
+			&note.Completed, &dueDate, &note.CreatedAt, &note.UpdatedAt,
 		); err != nil {
 			return nil, err
+		}
+		if dueDate.Valid {
+			note.DueDate = &dueDate.Time
 		}
 		notes = append(notes, note)
 	}
@@ -173,17 +198,17 @@ func (r *SQLiteRepository) GetAll(ctx context.Context, filter *domain.NoteFilter
 // SQL запрос:
 //
 //	UPDATE notes
-//	SET title = ?, content = ?, category = ?, completed = ?, updated_at = ?
+//	SET title = ?, content = ?, category = ?, completed = ?, due_date = ?, updated_at = ?
 //	WHERE id = ?
 func (r *SQLiteRepository) Update(ctx context.Context, note *domain.Note) (*domain.Note, error) {
 	query := `
 		UPDATE notes
-		SET title = ?, content = ?, category = ?, completed = ?, updated_at = ?
+		SET title = ?, content = ?, category = ?, completed = ?, due_date = ?, updated_at = ?
 		WHERE id = ?
 	`
 	now := time.Now()
 	_, err := r.db.ExecContext(ctx, query,
-		note.Title, note.Content, note.Category, note.Completed, now, note.ID)
+		note.Title, note.Content, note.Category, note.Completed, note.DueDate, now, note.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -213,10 +238,11 @@ func (r *SQLiteRepository) Delete(ctx context.Context, id int64) error {
 }
 
 // Migrate создает таблицу notes в базе данных, если она не существует.
+// Добавляет колонку due_date, если она отсутствует (для миграции существующих БД).
 // Должна вызываться при запуске приложения для инициализации БД.
 //
 // Возвращает:
-//   - error: ошибка при выполнении CREATE TABLE запроса
+//   - error: ошибка при выполнении CREATE TABLE или ALTER TABLE запроса
 //
 // SQL запрос:
 //
@@ -226,6 +252,7 @@ func (r *SQLiteRepository) Delete(ctx context.Context, id int64) error {
 //	    content TEXT,
 //	    category TEXT DEFAULT 'personal',
 //	    completed BOOLEAN DEFAULT 0,
+//	    due_date DATETIME,
 //	    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 //	    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 //	)
@@ -244,9 +271,27 @@ func (r *SQLiteRepository) Migrate() error {
 		content TEXT,
 		category TEXT DEFAULT 'personal',
 		completed BOOLEAN DEFAULT 0,
+		due_date DATETIME,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	)`
-	_, err := r.db.Exec(query)
-	return err
+	if _, err := r.db.Exec(query); err != nil {
+		return err
+	}
+
+	// Миграция: добавляем колонку due_date если её нет
+	var columnExists bool
+	err := r.db.QueryRow(`
+		SELECT COUNT(*) > 0 
+		FROM pragma_table_info('notes') 
+		WHERE name = 'due_date'
+	`).Scan(&columnExists)
+	if err == nil && !columnExists {
+		_, err = r.db.Exec(`ALTER TABLE notes ADD COLUMN due_date DATETIME`)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

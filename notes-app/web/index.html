@@ -7,10 +7,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Заметки">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Заметки</title>
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/styles.css?v=6">
 </head>
 <body>
     <div class="app">
@@ -58,10 +61,41 @@
                     <option value="personal">Личное</option>
                     <option value="work">Работа</option>
                 </select>
-                <input type="datetime-local" id="dueDateInput" title="Срок выполнения">
+                <div class="date-picker-wrapper">
+                    <input type="text" id="dueDateInput" placeholder="Срок выполнения" readonly>
+                    <button class="clear-date-btn" id="clearDateBtn" title="Очистить дату" style="display: none;">✕</button>
+                </div>
             </div>
             <div class="add-form-row">
                 <button id="addBtn" class="add-btn">Добавить</button>
+            </div>
+        </div>
+
+        <!-- Custom Date Picker -->
+        <div class="date-picker-overlay" id="datePickerOverlay" style="display: none;">
+            <div class="date-picker-modal">
+                <div class="date-picker-header">
+                    <button class="date-picker-nav" id="prevMonthPicker">&lt;</button>
+                    <h3 id="pickerMonth"></h3>
+                    <button class="date-picker-nav" id="nextMonthPicker">&gt;</button>
+                </div>
+                <div class="date-picker-weekdays">
+                    <div>Пн</div>
+                    <div>Вт</div>
+                    <div>Ср</div>
+                    <div>Чт</div>
+                    <div>Пт</div>
+                    <div>Сб</div>
+                    <div>Вс</div>
+                </div>
+                <div class="date-picker-days" id="pickerDays"></div>
+                <div class="date-picker-time">
+                    <input type="time" id="pickerTime" value="12:00">
+                </div>
+                <div class="date-picker-footer">
+                    <button class="date-picker-today" id="pickerTodayBtn">Сегодня</button>
+                    <button class="date-picker-ok" id="pickerOkBtn">ОК</button>
+                </div>
             </div>
         </div>
 
@@ -89,6 +123,39 @@
         <div class="notes-list" id="notesList"></div>
     </div>
 
-    <script src="/static/app.js"></script>
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="editModal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Редактировать заметку</h3>
+                <button class="modal-close" onclick="closeEditModal()" title="Закрыть">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="editTitleInput" placeholder="Название заметки" maxlength="100">
+                <textarea id="editContentInput" placeholder="Описание (необязательно)" maxlength="500"></textarea>
+                <div class="modal-row">
+                    <select id="editCategorySelect">
+                        <option value="personal">Личное</option>
+                        <option value="work">Работа</option>
+                    </select>
+                    <div class="date-picker-wrapper">
+                        <input type="text" id="editDueDateInput" placeholder="Срок выполнения" readonly>
+                        <button class="clear-date-btn" id="editClearDateBtn" title="Очистить дату" style="display: none;">✕</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeEditModal()">Отмена</button>
+                <button class="btn-ok" onclick="saveEdit()">ОК</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js?v=6"></script>
 </body>
 </html>

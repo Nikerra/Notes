@@ -528,3 +528,509 @@ body {
         font-size: 10px;
     }
 }
+
+/* Edit functionality styles */
+.note-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.note-edit {
+    background: none;
+    border: none;
+    color: #667eea;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.note-edit:hover {
+    background: #e8ebff;
+}
+
+.cancel-btn {
+    background: #f5f5f5;
+    color: #666;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+    background: #e0e0e0;
+}
+
+.add-btn.editing {
+    background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+}
+
+.add-btn.editing:hover {
+    box-shadow: 0 5px 15px rgba(255, 167, 38, 0.4);
+}
+
+/* Modal styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal {
+    background: white;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.modal-close:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body input,
+.modal-body textarea {
+    width: 100%;
+    border: 2px solid #f0f0f0;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    transition: border-color 0.3s;
+    margin-bottom: 10px;
+}
+
+.modal-body input:focus,
+.modal-body textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.modal-body textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.modal-row {
+    display: flex;
+    gap: 10px;
+}
+
+.modal-row select,
+.modal-row input[type="datetime-local"] {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.btn-cancel {
+    background: #f5f5f5;
+    color: #666;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #e0e0e0;
+}
+
+.btn-ok {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 40px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-ok:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-ok:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+    .modal {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .modal-footer {
+        flex-direction: column-reverse;
+    }
+    
+    .btn-cancel,
+    .btn-ok {
+        width: 100%;
+    }
+}
+
+/* Make OK button in add-form consistent */
+.add-form .btn-ok {
+    width: 100%;
+    padding: 14px 30px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Date input with OK button */
+.date-input-wrapper {
+    display: flex;
+    flex: 1;
+    gap: 8px;
+}
+
+.date-input-wrapper input[type="datetime-local"] {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #f0f0f0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+}
+
+.date-input-wrapper input[type="datetime-local"]:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.date-ok-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.date-ok-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+}
+
+.date-ok-btn:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+    .add-form-row {
+        flex-direction: column;
+    }
+    
+    .date-input-wrapper {
+        width: 100%;
+    }
+    
+    .date-ok-btn {
+        padding: 12px 16px;
+    }
+}
+
+/* Custom Date Picker */
+.date-picker-wrapper {
+    display: flex;
+    flex: 1;
+    position: relative;
+}
+
+.date-picker-wrapper input {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #f0f0f0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    padding-right: 35px;
+}
+
+.date-picker-wrapper input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.clear-date-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #f0f0f0;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.clear-date-btn:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.date-picker-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.2s ease;
+}
+
+.date-picker-modal {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    width: 90%;
+    max-width: 320px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+.date-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.date-picker-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.date-picker-nav {
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.date-picker-nav:hover {
+    background: #764ba2;
+    transform: scale(1.1);
+}
+
+.date-picker-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 5px;
+}
+
+.date-picker-weekdays div {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #667eea;
+    padding: 5px;
+}
+
+.date-picker-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.date-picker-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: #f8f9fa;
+}
+
+.date-picker-day:hover {
+    background: #e9ecef;
+}
+
+.date-picker-day.today {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.date-picker-day.selected {
+    box-shadow: 0 0 0 2px #667eea;
+    background: #e8ebff;
+}
+
+.date-picker-day.other-month {
+    color: #ccc;
+}
+
+.date-picker-time {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.date-picker-time input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #f0f0f0;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.date-picker-time input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.date-picker-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.date-picker-today {
+    background: #f5f5f5;
+    color: #666;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.date-picker-today:hover {
+    background: #e0e0e0;
+}
+
+.date-picker-ok {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.date-picker-ok:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+}
+
+@media (max-width: 480px) {
+    .add-form-row {
+        flex-direction: column;
+    }
+    
+    .date-picker-wrapper {
+        width: 100%;
+    }
+}

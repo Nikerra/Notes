@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"testing"
+	"time"
 
 	"notes-app/internal/domain"
 	"notes-app/internal/service"
@@ -40,6 +41,22 @@ func (m *mockRepository) GetAll(ctx context.Context, filter *domain.NoteFilter) 
 		if filter != nil && filter.Category != "" && note.Category != string(filter.Category) {
 			continue
 		}
+		if filter != nil && filter.HasDueDate != nil {
+			hasDueDate := note.DueDate != nil
+			if hasDueDate != *filter.HasDueDate {
+				continue
+			}
+		}
+		if filter != nil && filter.DueDateFrom != nil {
+			if note.DueDate == nil || note.DueDate.Before(*filter.DueDateFrom) {
+				continue
+			}
+		}
+		if filter != nil && filter.DueDateTo != nil {
+			if note.DueDate == nil || note.DueDate.After(*filter.DueDateTo) {
+				continue
+			}
+		}
 		notes = append(notes, note)
 	}
 	return notes, nil
@@ -65,7 +82,7 @@ func TestCreateNote_Success(t *testing.T) {
 	svc := service.NewNoteService(newMockRepository())
 	ctx := context.Background()
 
-	note, err := svc.Create(ctx, "Test Note", "Content", domain.CategoryPersonal)
+	note, err := svc.Create(ctx, "Test Note", "Content", domain.CategoryPersonal, nil)
 	if err != nil {
 		t.Fatalf("Failed to create note: %v", err)
 	}
@@ -82,7 +99,7 @@ func TestCreateNote_EmptyTitle(t *testing.T) {
 	svc := service.NewNoteService(newMockRepository())
 	ctx := context.Background()
 
-	_, err := svc.Create(ctx, "", "Content", domain.CategoryPersonal)
+	_, err := svc.Create(ctx, "", "Content", domain.CategoryPersonal, nil)
 	if err != service.ErrInvalidTitle {
 		t.Errorf("Expected ErrInvalidTitle, got %v", err)
 	}
@@ -92,7 +109,7 @@ func TestCreateNote_InvalidCategory(t *testing.T) {
 	svc := service.NewNoteService(newMockRepository())
 	ctx := context.Background()
 
-	_, err := svc.Create(ctx, "Test", "Content", "invalid")
+	_, err := svc.Create(ctx, "Test", "Content", "invalid", nil)
 	if err != service.ErrInvalidCategory {
 		t.Errorf("Expected ErrInvalidCategory, got %v", err)
 	}
@@ -132,7 +149,7 @@ func TestUpdate_Success(t *testing.T) {
 
 	created, _ := mock.Create(ctx, &domain.Note{Title: "Original", Category: "personal"})
 
-	updated, err := svc.Update(ctx, created.ID, "Updated", "Content", domain.CategoryWork, true)
+	updated, err := svc.Update(ctx, created.ID, "Updated", "Content", domain.CategoryWork, true, nil)
 	if err != nil {
 		t.Fatalf("Failed to update note: %v", err)
 	}
@@ -241,26 +258,26 @@ func TestGetUpcoming(t *testing.T) {
 	ctx := context.Background()
 
 	now := time.Now()
-	
+
 	// Note with upcoming due date
 	upcoming := &domain.Note{
-		Title:   "Upcoming",
+		Title:    "Upcoming",
 		Category: "personal",
-		DueDate: ptrTime(now.Add(2 * 24 * time.Hour)),
+		DueDate:  ptrTime(now.Add(2 * 24 * time.Hour)),
 	}
 	mock.Create(ctx, upcoming)
 
 	// Note with past due date
 	past := &domain.Note{
-		Title:   "Past",
+		Title:    "Past",
 		Category: "personal",
-		DueDate: ptrTime(now.Add(-1 * 24 * time.Hour)),
+		DueDate:  ptrTime(now.Add(-1 * 24 * time.Hour)),
 	}
 	mock.Create(ctx, past)
 
 	// Note without due date
 	noDueDate := &domain.Note{
-		Title:   "No Due Date",
+		Title:    "No Due Date",
 		Category: "personal",
 	}
 	mock.Create(ctx, noDueDate)
@@ -284,7 +301,7 @@ func TestGetOverdue(t *testing.T) {
 	ctx := context.Background()
 
 	now := time.Now()
-	
+
 	// Overdue incomplete note
 	overdue := &domain.Note{
 		Title:     "Overdue",

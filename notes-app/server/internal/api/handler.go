@@ -119,6 +119,7 @@ func (h *NoteHandler) RegisterRoutes(r *gin.RouterGroup) {
 //
 // Ответы:
 //   - 200 OK: массив заметок в JSON
+//   - 400 Bad Request: невалидные query параметры
 //   - 500 Internal Server Error: ошибка сервера
 //
 // Пример:
@@ -131,23 +132,38 @@ func (h *NoteHandler) GetAll(c *gin.Context) {
 
 	category := c.Query("category")
 	if category != "" && category != "all" {
-		filter.Category = domain.Category(category)
+		cat := domain.Category(category)
+		if !cat.IsValid() {
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: service.ErrInvalidCategory.Error()})
+			return
+		}
+		filter.Category = cat
 	}
 
 	if dueDateFrom := c.Query("dueDateFrom"); dueDateFrom != "" {
-		if t, err := time.Parse(time.RFC3339, dueDateFrom); err == nil {
-			filter.DueDateFrom = &t
+		t, err := time.Parse(time.RFC3339, dueDateFrom)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid dueDateFrom"})
+			return
 		}
+		filter.DueDateFrom = &t
 	}
 
 	if dueDateTo := c.Query("dueDateTo"); dueDateTo != "" {
-		if t, err := time.Parse(time.RFC3339, dueDateTo); err == nil {
-			filter.DueDateTo = &t
+		t, err := time.Parse(time.RFC3339, dueDateTo)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid dueDateTo"})
+			return
 		}
+		filter.DueDateTo = &t
 	}
 
 	if hasDueDate := c.Query("hasDueDate"); hasDueDate != "" {
-		val := hasDueDate == "true"
+		val, err := strconv.ParseBool(hasDueDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid hasDueDate"})
+			return
+		}
 		filter.HasDueDate = &val
 	}
 
